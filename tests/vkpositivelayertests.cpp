@@ -2937,25 +2937,26 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     m_errorMonitor->ExpectSuccess();
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags = {};
     ds_binding_flags[0] = 0;
     // No Error
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
+    ds_binding_flags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
     // Uncomment for Error
-    // ds_binding_flags[1] = 0;
+    // ds_binding_flags[2] = 0;
 
     layout_createinfo_binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
     layout_createinfo_binding_flags.pNext = NULL;
-    layout_createinfo_binding_flags.bindingCount = 2;
+    layout_createinfo_binding_flags.bindingCount = 3;
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
 
     // Prepare descriptors
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
+                                           {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_ALL, nullptr}, },
                                        0, &layout_createinfo_binding_flags, 0);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     uint32_t qfi = 0;
@@ -2992,13 +2993,15 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
 
     char const *shader_source =
         "#version 450\n"
+        "#extension GL_EXT_nonuniform_qualifier : enable\n "
         "layout(set = 0, binding = 0) uniform foo_0 { int val; } doit;\n"
-        "layout(set = 0, binding = 1) uniform foo_1 { int val; } readit;\n"
+        "layout(set = 0, binding = 1) uniform sampler TextureSamplers[2];\n"
+        "layout(set = 0, binding = 2) uniform texture2D Textures2D[];\n"
         "void main() {\n"
         "    if (doit.val == 0)\n"
         "        gl_Position = vec4(0.0);\n"
         "    else\n"
-        "        gl_Position = vec4(readit.val);\n"
+        "        gl_Position = texture(sampler2D(Textures2D[doit.val], TextureSamplers[0]), vec2(0.5, 0.5));\n"
         "}\n";
 
     VkShaderObj vs(m_device, shader_source, VK_SHADER_STAGE_VERTEX_BIT, this);
