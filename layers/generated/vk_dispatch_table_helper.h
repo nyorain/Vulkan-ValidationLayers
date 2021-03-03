@@ -28,10 +28,9 @@
 #include <vulkan/vk_layer.h>
 #include <cstring>
 #include <string>
-#include <unordered_set>
-#include <unordered_map>
 #include "vk_layer_dispatch_table.h"
 #include "vk_extension_helper.h"
+#include "layer_data_types.h"
 
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) { return VK_SUCCESS; };
@@ -420,7 +419,7 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetRayTracingPipelineStackSizeKHR(VkCom
 
 
 
-const std::unordered_map<std::string, std::string> api_extension_map {
+const layers::unordered_map<std::string, std::string> api_extension_map {
     {"vkAcquireFullScreenExclusiveModeEXT", "VK_EXT_full_screen_exclusive"},
     {"vkAcquireNextImage2KHR", "VK_KHR_swapchain"},
     {"vkAcquireNextImageKHR", "VK_KHR_swapchain"},

@@ -134,10 +134,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble += '#include <vulkan/vk_layer.h>\n'
         preamble += '#include <cstring>\n'
         preamble += '#include <string>\n'
-        preamble += '#include <unordered_set>\n'
-        preamble += '#include <unordered_map>\n'
         preamble += '#include "vk_layer_dispatch_table.h"\n'
         preamble += '#include "vk_extension_helper.h"\n'
+        preamble += '#include "layer_data_types.h"\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
@@ -241,7 +240,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     def OutputExtEnabledFunction(self):
         ext_fcn = ''
         # First, write out our static data structure -- map of all APIs that are part of extensions to their extension.
-        ext_fcn += 'const std::unordered_map<std::string, std::string> api_extension_map {\n'
+        ext_fcn += 'const layers::unordered_map<std::string, std::string> api_extension_map {\n'
         api_ext = dict()
         handles = GetHandleTypes(self.registry.tree)
         features = self.registry.tree.findall('feature') + self.registry.tree.findall('extensions/extension')

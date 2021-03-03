@@ -26,8 +26,8 @@
 #include <memory>
 #include <mutex>
 #include <type_traits>
-#include <unordered_set>
 #include <vector>
+#include "layer_data_types.h"
 
 // Hash and equality utilities for supporting hashing containers (e.g. unordered_set, unordered_map)
 namespace hash_util {
@@ -152,7 +152,7 @@ class Dictionary {
     struct KeyValueEqual {
         bool operator()(const Id &lhs, const Id &rhs) const { return KeyEqual()(*lhs, *rhs); }
     };
-    using Dict = std::unordered_set<Id, HashKeyValue, KeyValueEqual>;
+    using Dict = layers::unordered_set<Id, HashKeyValue, KeyValueEqual>;
     using Lock = std::mutex;
     using Guard = std::lock_guard<Lock>;
     Lock lock;

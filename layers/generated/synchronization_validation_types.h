@@ -34,9 +34,9 @@
 #include <array>
 #include <bitset>
 #include <map>
-#include <unordered_map>
 #include <stdint.h>
 #include <vulkan/vulkan.h>
+#include "layer_data_types.h"
 
 using SyncStageAccessFlags = std::bitset<128>;
 
@@ -208,7 +208,7 @@ static const SyncStageAccessFlags SYNC_IMAGE_LAYOUT_TRANSITION_BIT = (SyncStageA
 static const SyncStageAccessFlags SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT = (SyncStageAccessFlags(1) << SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER);
 
 // Map of the StageAccessIndices from the StageAccess Bit
-extern const std::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex> syncStageAccessIndexByStageAccessBit;
+extern const layers::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex> syncStageAccessIndexByStageAccessBit;
 
 struct SyncStageAccessInfoType {
     const char *name;

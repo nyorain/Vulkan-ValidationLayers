@@ -602,10 +602,8 @@ void FreeLayerDataPtr(void *data_key, small_unordered_map<void *, DATA_T *, 2> &
 template <typename DATA_T>
 DATA_T *GetLayerDataPtr(void *data_key, std::unordered_map<void *, DATA_T *> &layer_data_map) {
     DATA_T *debug_data;
-    typename std::unordered_map<void *, DATA_T *>::const_iterator got;
-
     /* TODO: We probably should lock here, or have caller lock */
-    got = layer_data_map.find(data_key);
+    auto got = layer_data_map.find(data_key);
 
     if (got == layer_data_map.end()) {
         debug_data = new DATA_T;

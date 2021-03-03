@@ -36,8 +36,6 @@
 #include <atomic>
 #include <functional>
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <list>
 #include <deque>
@@ -136,7 +134,7 @@ struct PHYSICAL_DEVICE_STATE {
     uint32_t display_plane_property_count = 0;
 
     // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
-    std::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
+    layers::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
 
     // TODO These are currently used by CoreChecks, but should probably be refactored
     bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
@@ -218,7 +216,7 @@ struct hash<GpuQueue> {
 struct SURFACE_STATE : public BASE_NODE {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     SWAPCHAIN_NODE* swapchain = nullptr;
-    std::unordered_map<GpuQueue, bool> gpu_queue_support;
+    layers::unordered_map<GpuQueue, bool> gpu_queue_support;
 
     SURFACE_STATE() {}
     SURFACE_STATE(VkSurfaceKHR surface) : surface(surface) {}
@@ -366,12 +364,12 @@ class ValidationStateTracker : public ValidationObject {
   public:
     //  TODO -- move to private
     //  TODO -- make consistent with traits approach below.
-    std::unordered_map<VkQueue, QUEUE_STATE> queueMap;
+    layers::unordered_map<VkQueue, QUEUE_STATE> queueMap;
 
-    std::unordered_set<VkQueue> queues;  // All queues under given device
+    layers::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
-    std::unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
-    std::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
+    layers::unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
+    layers::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
@@ -389,7 +387,7 @@ class ValidationStateTracker : public ValidationObject {
         using SharedType = std::shared_ptr<StateType>;
         using ConstSharedType = std::shared_ptr<const StateType>;
         using MappedType = std::shared_ptr<StateType>;
-        using MapType = std::unordered_map<HandleType, MappedType>;
+        using MapType = layers::unordered_map<HandleType, MappedType>;
     };
 
     // Override base class, we have some extra work to do here
@@ -425,7 +423,7 @@ class ValidationStateTracker : public ValidationObject {
 
     void AddAliasingImage(IMAGE_STATE* image_state);
     void RemoveAliasingImage(IMAGE_STATE* image_state);
-    void RemoveAliasingImages(const std::unordered_set<VkImage>& bound_images);
+    void RemoveAliasingImages(const layers::unordered_set<VkImage>& bound_images);
 
   public:
     template <typename State>
@@ -634,7 +632,7 @@ class ValidationStateTracker : public ValidationObject {
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
 
     // Used for instance versions of this object
-    std::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
+    layers::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 
@@ -1274,9 +1272,9 @@ class ValidationStateTracker : public ValidationObject {
                                                 VkResult result) override;
 
     // State Utilty functions
-    bool AddCommandBufferMem(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, VkDeviceMemory obj,
+    bool AddCommandBufferMem(layers::unordered_map<CMD_BUFFER_STATE*, int>& cb_bindings, VkDeviceMemory obj,
                              CMD_BUFFER_STATE* cb_node);
-    bool AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, const VulkanTypedHandle& obj,
+    bool AddCommandBufferBinding(layers::unordered_map<CMD_BUFFER_STATE*, int>& cb_bindings, const VulkanTypedHandle& obj,
                                  CMD_BUFFER_STATE* cb_node);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE_KHR*);
@@ -1309,9 +1307,9 @@ class ValidationStateTracker : public ValidationObject {
     void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset);
     void InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset);
     void InsertMemoryRange(const VulkanTypedHandle& typed_handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset);
-    void InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_nodes, const VulkanTypedHandle& obj,
+    void InvalidateCommandBuffers(layers::unordered_map<CMD_BUFFER_STATE*, int>& cb_nodes, const VulkanTypedHandle& obj,
                                   bool unlink = true);
-    void InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
+    void InvalidateLinkedCommandBuffers(layers::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
@@ -1476,8 +1474,8 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
 
     // Map for queue family index to queue count
-    std::unordered_map<uint32_t, uint32_t> queue_family_index_map;
-    std::unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
+    layers::unordered_map<uint32_t, uint32_t> queue_family_index_map;
+    layers::unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
     bool performance_lock_acquired = false;
 
     template <typename ExtProp>

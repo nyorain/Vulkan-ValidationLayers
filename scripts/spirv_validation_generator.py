@@ -170,13 +170,13 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
-        write('#include <unordered_map>', file=self.outFile)
         write('#include <string>', file=self.outFile)
         write('#include <functional>', file=self.outFile)
         write('#include <spirv/unified1/spirv.hpp>', file=self.outFile)
         write('#include "vk_extension_helper.h"', file=self.outFile)
         write('#include "core_validation_types.h"', file=self.outFile)
         write('#include "core_validation.h"', file=self.outFile)
+        write('#include "layer_data_types.h"', file=self.outFile)
         write(self.featurePointer(), file=self.outFile)
         write(self.mapStructDeclarations(), file=self.outFile)
     #

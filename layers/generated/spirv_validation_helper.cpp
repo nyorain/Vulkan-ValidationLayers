@@ -22,13 +22,13 @@
  *
  ****************************************************************************/
 
-#include <unordered_map>
 #include <string>
 #include <functional>
 #include <spirv/unified1/spirv.hpp>
 #include "vk_extension_helper.h"
 #include "core_validation_types.h"
 #include "core_validation.h"
+#include "layer_data_types.h"
 
 struct FeaturePointer {
     // Callable object to test if this feature is enabled in the given aggregate feature struct

@@ -220,8 +220,6 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unordered_map>
-#include <unordered_set>
 #include <algorithm>
 #include <memory>
 
@@ -241,6 +239,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #include "vk_extension_helper.h"
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
+#include "layer_data_types.h"
 
 
 extern std::atomic<uint64_t> global_unique_id;
@@ -582,18 +581,18 @@ class ValidationObject {
         // Reverse map display handles
         vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
         // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
+        layers::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
         struct SubpassesUsageStates {
-            std::unordered_set<uint32_t> subpasses_using_color_attachment;
-            std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+            layers::unordered_set<uint32_t> subpasses_using_color_attachment;
+            layers::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
         };
         // Uses unwrapped handles
-        std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+        layers::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
         // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
         // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
-        std::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+        layers::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
         // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
-        std::unordered_map<VkDescriptorPool, std::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
+        layers::unordered_map<VkDescriptorPool, layers::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
 
         // Unwrap a handle.
@@ -709,8 +708,6 @@ static const bool use_optick_instrumentation = false;
     inline_custom_source_preamble_2 = """
 namespace vulkan_layer_chassis {
 
-using std::unordered_map;
-
 static const VkLayerProperties global_layer = {
     OBJECT_LAYER_NAME, VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
 };
@@ -734,7 +731,7 @@ typedef struct {
     void* funcptr;
 } function_data;
 
-extern const std::unordered_map<std::string, function_data> name_to_funcptr_map;
+extern const layers::unordered_map<std::string, function_data> name_to_funcptr_map;
 
 // Manually written functions
 
@@ -1815,7 +1812,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             write('#ifdef _MSC_VER', file=self.outFile)
             write('#pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope', file=self.outFile)
             write('#endif', file=self.outFile)
-            write('const std::unordered_map<std::string, function_data> name_to_funcptr_map = {', file=self.outFile)
+            write('const layers::unordered_map<std::string, function_data> name_to_funcptr_map = {', file=self.outFile)
             write('\n'.join(self.intercepts), file=self.outFile)
             write('};\n', file=self.outFile)
             self.newline()
