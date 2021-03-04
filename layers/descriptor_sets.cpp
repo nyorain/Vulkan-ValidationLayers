@@ -81,7 +81,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
     }
 
     // Store the create info in the sorted order from above
-    std::map<uint32_t, uint32_t> binding_to_dyn_count;
+    layers::unordered_map<uint32_t, uint32_t> binding_to_dyn_count;
     uint32_t index = 0;
     binding_count_ = static_cast<uint32_t>(sorted_bindings.size());
     bindings_.reserve(binding_count_);
@@ -725,7 +725,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
         }
         // // This is a record time only path
         const bool record_time_validate = true;
-        result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer, attachments,
+        result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair.first,
+                                                   binding_pair.second, framebuffer, attachments,
                                                    subpasses, record_time_validate, caller, vuids);
     }
     return result;
@@ -733,7 +734,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
 
 bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
                                                   const std::vector<uint32_t> &dynamic_offsets,
-                                                  const std::pair<const uint32_t, DescriptorRequirement> &binding_info,
+                                                  const uint32_t binding, DescriptorRequirement binding_req,
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
                                                   const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
                                                   const char *caller, const DrawDispatchVuid &vuids) const {
@@ -744,8 +745,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
     using SamplerDescriptor = cvdescriptorset::SamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
     using AccelerationStructureDescriptor = cvdescriptorset::AccelerationStructureDescriptor;
-    const auto reqs = binding_info.second.reqs;
-    const auto binding = binding_info.first;
+    const auto reqs = binding_req.reqs;
     DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
     {
         // Copy the range, the end range is subject to update based on variable length descriptor arrays.
@@ -807,7 +807,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                         "Buffer is in a descriptorSet")) {
                                 return true;
                             }
-                            if (binding_info.second.is_writable &&
+                            if (binding_req.is_writable &&
                                 ValidateUnprotectedBuffer(cb_node, buffer_node, caller, vuids.protected_command_buffer,
                                                           "Buffer is in a descriptorSet")) {
                                 return true;
@@ -832,8 +832,8 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         image_view_state = image_descriptor->GetImageViewState();
                         image_layout = image_descriptor->GetImageLayout();
 
-                        if (binding_info.second.samplers_used_by_image.size() > index) {
-                            for (auto &sampler : binding_info.second.samplers_used_by_image[index]) {
+                        if (binding_req.samplers_used_by_image.size() > index) {
+                            for (auto &sampler : binding_req.samplers_used_by_image[index]) {
                                 // NOTE: This check _shouldn't_ be necessary due to the checks made in IsSpecificDescriptorType in
                                 //       shader_validation.cpp. However, without this check some traces still crash.
                                 if (sampler.second &&
@@ -1013,7 +1013,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                            vuids.unprotected_command_buffer, "Image is in a descriptorSet")) {
                                     return true;
                                 }
-                                if (binding_info.second.is_writable &&
+                                if (binding_req.is_writable &&
                                     ValidateUnprotectedImage(cb_node, image_view_state->image_state.get(), caller,
                                                              vuids.protected_command_buffer, "Image is in a descriptorSet")) {
                                     return true;
@@ -1286,7 +1286,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                         vuids.unprotected_command_buffer, "Buffer is in a descriptorSet")) {
                                 return true;
                             }
-                            if (binding_info.second.is_writable &&
+                            if (binding_req.is_writable &&
                                 ValidateUnprotectedBuffer(cb_node, buffer_view_state->buffer_state.get(), caller,
                                                           vuids.protected_command_buffer, "Buffer is in a descriptorSet")) {
                                 return true;
@@ -1729,7 +1729,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         auto flags = layout_->GetDescriptorBindingFlagsFromIndex(index);
         if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT)) {
             if (!(flags & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)) {
-                cmd_info.binding_infos.emplace_back(binding_req_pair);
+                cmd_info.binding_infos.emplace_back(binding_req_pair.first, binding_req_pair.second);
             }
             continue;
         }

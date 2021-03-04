@@ -1184,7 +1184,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                         state.per_set[set_index].validated_set_binding_req_map.begin(),
                                         state.per_set[set_index].validated_set_binding_req_map.end(),
-                                        std::inserter(delta_reqs, delta_reqs.begin()));
+                                        layers::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     result |=
                         ValidateDrawState(descriptor_set, delta_reqs, state.per_set[set_index].dynamicOffsets, cb_node,
                                           cb_node->active_attachments.get(), *cb_node->active_subpasses.get(), function, vuid);
@@ -3134,7 +3134,8 @@ struct CommandBufferSubmitState {
                     // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
                     // This submit time not record time...
                     const bool record_time_validate = false;
-                    skip |= core->ValidateDescriptorSetBindingData(cb_node, set_node, dynamic_offsets, binding_info,
+                    skip |= core->ValidateDescriptorSetBindingData(cb_node, set_node, dynamic_offsets, binding_info.first,
+                                                                   binding_info.second,
                                                                    cmd_info.framebuffer, cmd_info.attachments.get(),
                                                                    *cmd_info.subpasses.get(), record_time_validate,
                                                                    function.c_str(), core->GetDrawDispatchVuid(cmd_info.cmd_type));
@@ -5367,9 +5368,9 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
 // Used by PreCallValidateCreatePipelineLayout.
 // Returns a map indexed by VK_DESCRIPTOR_TYPE_* enum of the summed descriptors by type.
 // Note: descriptors only count against the limit once even if used by multiple stages.
-std::map<uint32_t, uint32_t> GetDescriptorSum(
+layers::unordered_map<uint32_t, uint32_t> GetDescriptorSum(
     const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
-    std::map<uint32_t, uint32_t> sum_by_type;
+    layers::unordered_map<uint32_t, uint32_t> sum_by_type;
     for (const auto &dsl : set_layouts) {
         if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
             continue;
@@ -5522,7 +5523,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Total descriptors by type
     //
-    std::map<uint32_t, uint32_t> sum_all_stages = GetDescriptorSum(set_layouts, true);
+    auto sum_all_stages = GetDescriptorSum(set_layouts, true);
     // Samplers
     uint32_t sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLER] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
     if (sum > phys_dev_props.limits.maxDescriptorSetSamplers) {
@@ -5700,7 +5701,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Total descriptors by type, summed across all pipeline stages
         //
-        std::map<uint32_t, uint32_t> sum_all_stages_update_after_bind = GetDescriptorSum(set_layouts, false);
+        auto sum_all_stages_update_after_bind = GetDescriptorSum(set_layouts, false);
         // Samplers
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_SAMPLER] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];

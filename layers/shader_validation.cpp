@@ -668,7 +668,7 @@ static spirv_inst_iter GetStructType(SHADER_MODULE_STATE const *src, spirv_inst_
     }
 }
 
-static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, std::map<location_t, interface_var> *out,
+static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, layers::unordered_map<location_t, interface_var> *out,
                                          bool is_array_of_verts, uint32_t id, uint32_t type_id, bool is_patch,
                                          int /*first_location*/) {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
@@ -753,11 +753,11 @@ static std::vector<uint32_t> FindEntrypointInterfaces(spirv_inst_iter entrypoint
     return interfaces;
 }
 
-static std::map<location_t, interface_var> CollectInterfaceByLocation(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint,
+static layers::unordered_map<location_t, interface_var> CollectInterfaceByLocation(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint,
                                                                       spv::StorageClass sinterface, bool is_array_of_verts) {
     // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
 
-    std::map<location_t, interface_var> out;
+    layers::unordered_map<location_t, interface_var> out;
 
     for (uint32_t iid : FindEntrypointInterfaces(entrypoint)) {
         auto insn = src->get_def(iid);
@@ -1554,7 +1554,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
     const auto inputs = CollectInterfaceByLocation(vs, entrypoint, spv::StorageClassInput, false);
 
     // Build index by location
-    std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
+    layers::unordered_map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
     if (vi) {
         for (uint32_t i = 0; i < vi->vertexAttributeDescriptionCount; ++i) {
             const auto num_locations = GetLocationsConsumedByFormat(vi->pVertexAttributeDescriptions[i].format);
@@ -1568,7 +1568,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
         const VkVertexInputAttributeDescription *attrib = nullptr;
         const interface_var *input = nullptr;
     };
-    std::map<uint32_t, AttribInputPair> location_map;
+    layers::unordered_map<uint32_t, AttribInputPair> location_map;
     for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
     for (const auto &input_it : inputs) location_map[input_it.first.first].input = &input_it.second;
 
@@ -1612,7 +1612,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
         const VkAttachmentDescription2 *attachment = nullptr;
         const interface_var *output = nullptr;
     };
-    std::map<uint32_t, Attachment> location_map;
+    layers::unordered_map<uint32_t, Attachment> location_map;
 
     const auto subpass = rpci->pSubpasses[subpass_index];
     for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
@@ -1650,8 +1650,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
                                    "Attachment %" PRIu32
                                    " not written by fragment shader; undefined values will be written to attachment",
                                    location);
-            }
-        } else if (!attachment && output) {
+            } } else if (!attachment && output) {
             if (!(alpha_to_coverage_enabled && location == 0)) {
                 skip |= LogWarning(fs->vk_shader_module, kVUID_Core_Shader_OutputNotConsumed,
                                    "fragment shader writes to output location %" PRIu32 " with no matching attachment", location);

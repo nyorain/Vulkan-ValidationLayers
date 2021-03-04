@@ -542,7 +542,7 @@ struct alignas(alignof(AnyDescriptor)) DescriptorBackingStore {
 
 // Structs to contain common elements that need to be shared between Validate* and Perform* calls below
 struct AllocateDescriptorSetsData {
-    std::map<uint32_t, uint32_t> required_descriptors_by_type;
+    layers::unordered_map<uint32_t, uint32_t> required_descriptors_by_type;
     std::vector<std::shared_ptr<DescriptorSetLayout const>> layout_nodes;
     void Init(uint32_t);
     AllocateDescriptorSetsData(){};

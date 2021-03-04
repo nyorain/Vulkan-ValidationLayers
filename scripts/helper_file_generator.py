@@ -778,7 +778,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '#define VK_EXTENSION_HELPER_H_',
             '#include <string>',
             '#include <utility>',
-            '#include <set>',
             '#include <vector>',
             '#include <cassert>',
             '',
@@ -969,7 +968,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 '};'])
 
             # Output reference lists of instance/device extension names
-            struct.extend(['', 'static const std::set<std::string> k%sExtensionNames = {' % type])
+            struct.extend(['', 'static const layers::unordered_set<std::string> k%sExtensionNames = {' % type])
             struct.extend([guarded(info['ifdef'], '    %s,' % info['define']) for ext_name, info in extension_items])
             struct.extend(['};', ''])
             output.extend(struct)

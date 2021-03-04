@@ -172,10 +172,32 @@ struct SamplerUsedByImage {
     uint32_t sampler_index;
 };
 
+inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b) NOEXCEPT {
+    return a.sampler_slot == b.sampler_slot && a.sampler_index == b.sampler_index;
+}
+
 namespace std {
 template <>
 struct less<SamplerUsedByImage> {
     bool operator()(const SamplerUsedByImage &left, const SamplerUsedByImage &right) const { return false; }
+};
+
+template <typename T1, typename T2>
+struct hash<std::pair<T1, T2>> {
+    size_t operator()(const std::pair<T1, T2> &value) const {
+        hash_util::HashCombiner hc;
+        hc << value.first << value.second;
+        return hc.Value();
+    }
+};
+
+template <>
+struct hash<SamplerUsedByImage> {
+    size_t operator()(const SamplerUsedByImage &value) const {
+        hash_util::HashCombiner hc;
+        hc << value.sampler_slot << value.sampler_index;
+        return hc.Value();
+    }
 };
 }  // namespace std
 
@@ -183,7 +205,7 @@ struct SAMPLER_STATE;
 struct DescriptorRequirement {
     descriptor_req reqs;
     bool is_writable;
-    std::vector<std::map<SamplerUsedByImage, const cvdescriptorset::Descriptor *>>
+    std::vector<layers::unordered_map<SamplerUsedByImage, const cvdescriptorset::Descriptor *>>
         samplers_used_by_image;  // Copy from StageState.interface_var. It combines from plural shader stages.
                                  // The index of array is index of image.
 
@@ -194,7 +216,7 @@ inline bool operator==(const DescriptorRequirement &a, const DescriptorRequireme
 
 inline bool operator<(const DescriptorRequirement &a, const DescriptorRequirement &b) NOEXCEPT { return a.reqs < b.reqs; }
 
-typedef std::map<uint32_t, DescriptorRequirement> BindingReqMap;
+typedef layers::unordered_map<uint32_t, DescriptorRequirement> BindingReqMap;
 
 struct DESCRIPTOR_POOL_STATE : BASE_NODE {
     VkDescriptorPool pool;
@@ -203,8 +225,8 @@ struct DESCRIPTOR_POOL_STATE : BASE_NODE {
 
     safe_VkDescriptorPoolCreateInfo createInfo;
     layers::unordered_set<cvdescriptorset::DescriptorSet *> sets;  // Collection of all sets in this pool
-    std::map<uint32_t, uint32_t> maxDescriptorTypeCount;        // Max # of descriptors of each type in this pool
-    std::map<uint32_t, uint32_t> availableDescriptorTypeCount;  // Available # of descriptors of each type in this pool
+    layers::unordered_map<uint32_t, uint32_t> maxDescriptorTypeCount;        // Max # of descriptors of each type in this pool
+    layers::unordered_map<uint32_t, uint32_t> availableDescriptorTypeCount;  // Available # of descriptors of each type in this pool
 
     DESCRIPTOR_POOL_STATE(const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo)
         : pool(pool),
@@ -624,8 +646,8 @@ struct SubpassDependencyGraphNode {
         Dependency(const VkSubpassDependency2 *dependency_, const SubpassDependencyGraphNode *node_)
             : dependency(dependency_), node(node_) {}
     };
-    std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> prev;
-    std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> next;
+    layers::unordered_map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> prev;
+    layers::unordered_map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> next;
     std::vector<uint32_t> async;  // asynchronous subpasses with a lower subpass index
 
     std::vector<const VkSubpassDependency2 *> barrier_from_external;
@@ -1240,7 +1262,7 @@ struct QFOTransferCBScoreboards {
     QFOTransferCBScoreboard<TransferBarrier> release;
 };
 
-typedef std::map<QueryObject, QueryState> QueryMap;
+typedef layers::unordered_map<QueryObject, QueryState> QueryMap;
 typedef layers::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
 typedef ImageSubresourceLayoutMap::LayoutMap GlobalImageLayoutRangeMap;
 typedef layers::unordered_map<VkImage, Optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
@@ -1326,7 +1348,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
     std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
     std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> active_attachments;
-    std::set<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_states;
+    layers::unordered_set<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_states;
 
     VkSubpassContents activeSubpassContents;
     uint32_t active_render_pass_device_mask;
@@ -1377,7 +1399,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<uint8_t> push_constant_data;
     PushConstantRangesId push_constant_data_ranges;
 
-    std::map<VkShaderStageFlagBits, std::vector<uint8_t>>
+    layers::unordered_map<VkShaderStageFlagBits, std::vector<uint8_t>>
         push_constant_data_update;  // vector's value is enum PushConstantByteState.
     VkPipelineLayout push_constant_pipeline_layout_set;
 

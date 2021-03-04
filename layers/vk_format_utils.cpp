@@ -22,10 +22,9 @@
 #include <string.h>
 #include <string>
 #include <vector>
-#include <map>
-#include <set>
 #include "vulkan/vulkan.h"
 #include "vk_format_utils.h"
+#include "layer_data_types.h"
 
 struct VULKAN_FORMAT_INFO {
     uint32_t size;
@@ -38,7 +37,7 @@ struct VULKAN_FORMAT_INFO {
 
 // Set up data structure with size(bytes) and number of channels for each Vulkan format
 // For compressed and multi-plane formats, size is bytes per compressed or shared block
-const std::map<VkFormat, VULKAN_FORMAT_INFO> kVkFormatTable = {
+const layers::unordered_map<VkFormat, VULKAN_FORMAT_INFO> kVkFormatTable = {
     {VK_FORMAT_UNDEFINED,                   {0, 0, VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT }},
     {VK_FORMAT_R4G4_UNORM_PACK8,            {1, 2, VK_FORMAT_COMPATIBILITY_CLASS_8_BIT}},
     {VK_FORMAT_R4G4B4A4_UNORM_PACK16,       {2, 4, VK_FORMAT_COMPATIBILITY_CLASS_16_BIT}},
@@ -1279,7 +1278,7 @@ struct VULKAN_MULTIPLANE_COMPATIBILITY {
 
 // Source: Vulkan spec Table 47. Plane Format Compatibility Table
 // clang-format off
-static const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY>kVkMultiplaneCompatibilityMap {
+static const layers::unordered_map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY>kVkMultiplaneCompatibilityMap {
     { VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,                  { { { 1, 1, VK_FORMAT_R8_UNORM },
                                                                 { 2, 2, VK_FORMAT_R8_UNORM },
                                                                 { 2, 2, VK_FORMAT_R8_UNORM } } } },
@@ -1414,7 +1413,7 @@ VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat,
 }
 
 // Source: Vulkan spec Table 69. Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views
-const std::set<VkFormat> kVkFormatsRequiringYcbcrConversion{VK_FORMAT_G8B8G8R8_422_UNORM,
+const layers::unordered_set<VkFormat> kVkFormatsRequiringYcbcrConversion{VK_FORMAT_G8B8G8R8_422_UNORM,
                                                             VK_FORMAT_B8G8R8G8_422_UNORM,
                                                             VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
                                                             VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,

@@ -1226,7 +1226,7 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, CMD_TYP
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                         state.per_set[set_index].validated_set_binding_req_map.begin(),
                                         state.per_set[set_index].validated_set_binding_req_map.end(),
-                                        std::inserter(delta_reqs, delta_reqs.begin()));
+                                        layers::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pipe, delta_reqs, function);
                 } else {
                     descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pipe, binding_req_map, function);
