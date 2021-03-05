@@ -531,6 +531,9 @@ class ConstMapView {
 // double wrapped map variants.. to avoid needing to templatize on the range map type.  The underlying maps are available for
 // use in performance sensitive places that are *already* templatized (for example update_range_value).
 // In STL style.  Note that N must be < uint8_t max
+template <typename T, size_t N>
+using BothRangeMap = sparse_container::range_map<IndexType, T>;
+#if 0
 enum BothRangeMapMode { kTristate, kSmall, kBig };
 template <typename T, size_t N>
 class BothRangeMap {
@@ -831,7 +834,7 @@ class BothRangeMap {
     using Storage = typename std::aligned_union<0, SmallMap, BigMap>::type;
     Storage backing_store;
 };
-
+#endif
 }  // namespace subresource_adapter
 
 #endif
